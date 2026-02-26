@@ -623,208 +623,201 @@ const Core = () => {
   };
 
   return (
-    <>
-      <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-      />
+    <div
+      style={{
+        background: "linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)",
+        minHeight: "100vh",
+        color: "#EAEAEA",
+      }}
+    >
+      {/* Header */}
       <div
+        className="p-4"
         style={{
-          background: "linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)",
-          minHeight: "100vh",
-          color: "#EAEAEA",
+          background: "rgba(26, 26, 46, 0.8)",
+          borderBottom: "2px solid #2A3F5F",
         }}
       >
-        {/* Header */}
-        <div
-          className="p-4"
+        <h1
+          className="display-4 fw-bold m-0"
           style={{
-            background: "rgba(26, 26, 46, 0.8)",
-            borderBottom: "2px solid #2A3F5F",
+            background: "linear-gradient(135deg, #FF6B6B, #4ECDC4, #FFE66D)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
-          <h1
-            className="display-4 fw-bold m-0"
-            style={{
-              background: "linear-gradient(135deg, #FF6B6B, #4ECDC4, #FFE66D)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Form Builder Studio
-          </h1>
-          <p className="text-muted mt-2">
-            Drag & drop components and containers to design your perfect form
-          </p>
-        </div>
+          Form Builder Studio
+        </h1>
+        <p className="text-muted mt-2">
+          Drag & drop components and containers to design your perfect form
+        </p>
+      </div>
 
-        {/* Main Container */}
-        <div className="container-fluid p-4">
-          <div className="row g-4">
-            {/* Left Panel - Components */}
-            <div className="col-md-3">
-              <div
-                className="rounded p-4 border border-secondary"
-                style={{
-                  background: "#16213E",
-                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.4)",
-                  position: "sticky",
-                  top: "20px",
-                }}
+      {/* Main Container */}
+      <div className="container-fluid p-4">
+        <div className="row g-4">
+          {/* Left Panel - Components */}
+          <div className="col-md-3">
+            <div
+              className="rounded p-4 border border-secondary"
+              style={{
+                background: "#16213E",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.4)",
+                position: "sticky",
+                top: "20px",
+              }}
+            >
+              <h2
+                className="h5 mb-4 text-uppercase fw-bold"
+                style={{ color: "#FFE66D", letterSpacing: "2px" }}
               >
-                <h2
-                  className="h5 mb-4 text-uppercase fw-bold"
-                  style={{ color: "#FFE66D", letterSpacing: "2px" }}
-                >
-                  Components
-                </h2>
+                Components
+              </h2>
 
-                {components.map((component) => (
-                  <div
-                    key={component.type}
-                    draggable="true"
-                    onDragStart={(e) => {
-                      dragType.current = component.type;
-                      e.dataTransfer.effectAllowed = "copy";
-                    }}
-                    className="rounded p-3 mb-3 border border-transparent"
-                    style={{
-                      background: "#0F3460",
-                      cursor: "grab",
-                      transition: "all 0.3s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateX(8px)";
-                      e.currentTarget.style.borderColor = "#FF6B6B";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 25px rgba(255, 107, 107, 0.3)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateX(0)";
-                      e.currentTarget.style.borderColor = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                  >
-                    <span style={{ fontSize: "1.5rem", marginRight: "0.8rem" }}>
-                      {component.icon}
-                    </span>
-                    <span className="fw-semibold">{component.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Panel - Canvas */}
-            <div className="col-md-9">
-              <div
-                className="rounded p-4 border border-secondary"
-                style={{
-                  background: "#16213E",
-                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.4)",
-                }}
-              >
-                <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
-                  <h2
-                    className="h5 m-0 text-uppercase fw-bold"
-                    style={{ color: "#4ECDC4", letterSpacing: "2px" }}
-                  >
-                    Canvas
-                  </h2>
-                  <div className="d-flex gap-2">
-                    <button
-                      onClick={clearCanvas}
-                      className="btn btn-outline-secondary text-uppercase fw-bold"
-                      style={{ fontSize: "0.8rem", letterSpacing: "1px" }}
-                    >
-                      Clear All
-                    </button>
-                    <button
-                      onClick={exportForm}
-                      className="btn text-uppercase fw-bold"
-                      style={{
-                        background: "linear-gradient(135deg, #4ECDC4, #FFE66D)",
-                        color: "#1A1A2E",
-                        fontSize: "0.8rem",
-                        letterSpacing: "1px",
-                        border: "none",
-                      }}
-                    >
-                      Export HTML
-                    </button>
-                  </div>
-                </div>
-
+              {components.map((component) => (
                 <div
-                  ref={canvasRef}
-                  className="rounded border border-2 border-dashed p-4"
+                  key={component.type}
+                  draggable="true"
+                  onDragStart={(e) => {
+                    dragType.current = component.type;
+                    e.dataTransfer.effectAllowed = "copy";
+                  }}
+                  className="rounded p-3 mb-3 border border-transparent"
                   style={{
-                    borderColor: "#2A3F5F !important",
-                    background: "rgba(15, 52, 96, 0.5)",
-                    minHeight: "600px",
-                    position: "relative",
+                    background: "#0F3460",
+                    cursor: "grab",
+                    transition: "all 0.3s ease",
                   }}
-                  onDrop={handleDropOnCanvas}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.style.borderColor = "#4ECDC4";
-                    e.currentTarget.style.background =
-                      "rgba(78, 205, 196, 0.1)";
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateX(8px)";
+                    e.currentTarget.style.borderColor = "#FF6B6B";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 25px rgba(255, 107, 107, 0.3)";
                   }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#2A3F5F";
-                    e.currentTarget.style.background = "rgba(15, 52, 96, 0.5)";
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateX(0)";
+                    e.currentTarget.style.borderColor = "transparent";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
-                  {elements.length === 0 && containers.length === 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#A0A0A0",
-                        fontSize: "1.2rem",
-                        textAlign: "center",
-                        pointerEvents: "none",
-                        opacity: 0.5,
-                      }}
-                    >
-                      Drag components or containers here to build your form
-                    </div>
-                  )}
+                  <span style={{ fontSize: "1.5rem", marginRight: "0.8rem" }}>
+                    {component.icon}
+                  </span>
+                  <span className="fw-semibold">{component.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-                  {/* Render Containers */}
-                  {containers.map((container) => (
-                    <ContainerElement
-                      key={container.id}
-                      container={container}
-                      onDelete={deleteContainer}
-                      onUpdate={updateContainerPosition}
-                      onDropElement={handleDropOnContainer}
-                      elements={elements}
-                      onDeleteElement={deleteElement}
-                      onReorderElement={reorderElement}
+          {/* Right Panel - Canvas */}
+          <div className="col-md-9">
+            <div
+              className="rounded p-4 border border-secondary"
+              style={{
+                background: "#16213E",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.4)",
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+                <h2
+                  className="h5 m-0 text-uppercase fw-bold"
+                  style={{ color: "#4ECDC4", letterSpacing: "2px" }}
+                >
+                  Canvas
+                </h2>
+                <div className="d-flex gap-2">
+                  <button
+                    onClick={clearCanvas}
+                    className="btn btn-outline-secondary text-uppercase fw-bold"
+                    style={{ fontSize: "0.8rem", letterSpacing: "1px" }}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={exportForm}
+                    className="btn text-uppercase fw-bold"
+                    style={{
+                      background: "linear-gradient(135deg, #4ECDC4, #FFE66D)",
+                      color: "#1A1A2E",
+                      fontSize: "0.8rem",
+                      letterSpacing: "1px",
+                      border: "none",
+                    }}
+                  >
+                    Export HTML
+                  </button>
+                </div>
+              </div>
+
+              <div
+                ref={canvasRef}
+                className="rounded border border-2 border-dashed p-4"
+                style={{
+                  borderColor: "#2A3F5F !important",
+                  background: "rgba(15, 52, 96, 0.5)",
+                  minHeight: "600px",
+                  position: "relative",
+                }}
+                onDrop={handleDropOnCanvas}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.borderColor = "#4ECDC4";
+                  e.currentTarget.style.background = "rgba(78, 205, 196, 0.1)";
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#2A3F5F";
+                  e.currentTarget.style.background = "rgba(15, 52, 96, 0.5)";
+                }}
+              >
+                {elements.length === 0 && containers.length === 0 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      color: "#A0A0A0",
+                      fontSize: "1.2rem",
+                      textAlign: "center",
+                      pointerEvents: "none",
+                      opacity: 0.5,
+                    }}
+                  >
+                    Drag components or containers here to build your form
+                  </div>
+                )}
+
+                {/* Render Containers */}
+                {containers.map((container) => (
+                  <ContainerElement
+                    key={container.id}
+                    container={container}
+                    onDelete={deleteContainer}
+                    onUpdate={updateContainerPosition}
+                    onDropElement={handleDropOnContainer}
+                    elements={elements}
+                    onDeleteElement={deleteElement}
+                    onReorderElement={reorderElement}
+                  />
+                ))}
+
+                {/* Render standalone elements (not in containers) */}
+                {elements
+                  .filter((el) => !el.containerId)
+                  .map((element) => (
+                    <HTMLFormElement
+                      key={element.id}
+                      element={element}
+                      onDelete={deleteElement}
+                      onUpdate={updatePosition}
                     />
                   ))}
-
-                  {/* Render standalone elements (not in containers) */}
-                  {elements
-                    .filter((el) => !el.containerId)
-                    .map((element) => (
-                      <HTMLFormElement
-                        key={element.id}
-                        element={element}
-                        onDelete={deleteElement}
-                        onUpdate={updatePosition}
-                      />
-                    ))}
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
