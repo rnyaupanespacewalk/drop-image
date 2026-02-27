@@ -541,159 +541,152 @@ function PreviewForm({ freeElements, containers, onClose }) {
   );
 
   return (
-   
-          <><div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: "#1e293b" }}>
-        Preview Mode
-      </div>
-      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
-        Interacting as an end user
-      </div>
-    </div><button
-      onClick={onClose}
+    <div
       style={{
-        background: "#f1f5f9",
-        border: "none",
-        borderRadius: 8,
-        width: 32,
-        height: 32,
-        cursor: "pointer",
-        fontSize: 18,
-        color: "#64748b",
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.55)",
+        zIndex: 2000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-        ×
-      </button><div style={{ padding: "20px 24px 24px" }}>
-        {result ? (
+      <div
+        style={{
+          background: "#f8fafc",
+          borderRadius: 16,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
+          width: 520,
+          maxHeight: "85vh",
+          overflowY: "auto",
+          fontFamily: "system-ui,sans-serif",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "20px 24px 16px",
+            background: "#fff",
+            borderRadius: "16px 16px 0 0",
+            borderBottom: "1px solid #e2e8f0",
+          }}
+        >
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 16,
-                padding: "12px 16px",
-                background: "#d1fae5",
-                borderRadius: 8,
-              }}
-            >
-              <span style={{ fontSize: 20 }}>✓</span>
-              <span
-                style={{ fontWeight: 600, color: "#065f46", fontSize: 14 }}
-              >
-                Form submitted successfully!
-              </span>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#1e293b" }}>
+              Preview Mode
             </div>
-            <div
-              style={{
-                background: "#1e293b",
-                borderRadius: 8,
-                padding: "16px",
-                fontFamily: "monospace",
-                fontSize: 12,
-                color: "#94a3b8",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.7,
-              }}
-            >
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: 10,
-                  display: "block",
-                  marginBottom: 8,
-                  fontFamily: "system-ui",
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
-                Form Data (JSON)
-              </span>
-              {JSON.stringify(result, null, 2)}
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+              Interacting as an end user
             </div>
-            <button
-              onClick={() => {
-                setResult(null);
-                setValues({});
-                setErrors({});
-              } }
-              style={{
-                marginTop: 16,
-                width: "100%",
-                padding: "10px",
-                background: C.accent,
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 13,
-              }}
-            >
-              ↺ Reset &amp; Fill Again
-            </button>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {freeElements.length > 0 && (
+          <button
+            onClick={onClose}
+            style={{
+              background: "#f1f5f9",
+              border: "none",
+              borderRadius: 8,
+              width: 32,
+              height: 32,
+              cursor: "pointer",
+              fontSize: 18,
+              color: "#64748b",
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <div style={{ padding: "20px 24px 24px" }}>
+          {result ? (
+            <div>
               <div
                 style={{
-                  background: "#fff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 10,
-                  padding: "16px",
                   display: "flex",
-                  flexDirection: "column",
-                  gap: 14,
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 16,
+                  padding: "12px 16px",
+                  background: "#d1fae5",
+                  borderRadius: 8,
                 }}
               >
-                {freeElements.map((el) => {
-                  if (el.type === "Button")
-                    return (
-                      <button
-                        key={el.id}
-                        onClick={handleSubmit}
-                        style={{
-                          padding: "11px 20px",
-                          background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 8,
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          fontSize: 14,
-                        }}
-                      >
-                        {el.props?.buttonText || "Submit"}
-                      </button>
-                    );
-                  return (
-                    <FormField
-                      key={el.id}
-                      el={el}
-                      values={values}
-                      errors={errors}
-                      setValue={setValue} />
-                  );
-                })}
-              </div>
-            )}
-            {containers.map((cont, idx) => {
-              const sorted = sortedChildren(cont.children);
-              const contErrors = sorted.some((ch) => errors[ch.id]);
-              return (
-                <AccordionSection
-                  key={cont.id}
-                  title={`Container ${idx + 1}`}
-                  index={idx}
-                  hasErrors={contErrors}
-                  defaultOpen={idx === 0}
+                <span style={{ fontSize: 20 }}>✓</span>
+                <span
+                  style={{ fontWeight: 600, color: "#065f46", fontSize: 14 }}
                 >
-                  {sorted.map((child) => {
-                    if (child.type === "Button")
+                  Form submitted successfully!
+                </span>
+              </div>
+              <div
+                style={{
+                  background: "#1e293b",
+                  borderRadius: 8,
+                  padding: "16px",
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  color: "#94a3b8",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.7,
+                }}
+              >
+                <span
+                  style={{
+                    color: "#64748b",
+                    fontSize: 10,
+                    display: "block",
+                    marginBottom: 8,
+                    fontFamily: "system-ui",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  Form Data (JSON)
+                </span>
+                {JSON.stringify(result, null, 2)}
+              </div>
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setValues({});
+                  setErrors({});
+                }}
+                style={{
+                  marginTop: 16,
+                  width: "100%",
+                  padding: "10px",
+                  background: C.accent,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: 13,
+                }}
+              >
+                ↺ Reset &amp; Fill Again
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {freeElements.length > 0 && (
+                <div
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 10,
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14,
+                  }}
+                >
+                  {freeElements.map((el) => {
+                    if (el.type === "Button")
                       return (
                         <button
-                          key={child.id}
+                          key={el.id}
                           onClick={handleSubmit}
                           style={{
                             padding: "11px 20px",
@@ -706,28 +699,74 @@ function PreviewForm({ freeElements, containers, onClose }) {
                             fontSize: 14,
                           }}
                         >
-                          {child.props?.buttonText || "Submit"}
+                          {el.props?.buttonText || "Submit"}
                         </button>
                       );
                     return (
                       <FormField
-                        key={child.id}
-                        el={child}
+                        key={el.id}
+                        el={el}
                         values={values}
                         errors={errors}
-                        setValue={setValue} />
+                        setValue={setValue}
+                      />
                     );
                   })}
-                </AccordionSection>
-              );
-            })}
-            {!allFields.some((e) => e.type === "Button") && (
-              <div style={{ marginTop: 4 }}>{submitBtn}</div>
-            )}
-          </div>
-        )}
-      </div></>
-     
+                </div>
+              )}
+              {containers.map((cont, idx) => {
+                const sorted = sortedChildren(cont.children);
+                const contErrors = sorted.some((ch) => errors[ch.id]);
+                return (
+                  <AccordionSection
+                    key={cont.id}
+                    title={`Container ${idx + 1}`}
+                    index={idx}
+                    hasErrors={contErrors}
+                    defaultOpen={idx === 0}
+                  >
+                    {sorted.map((child) => {
+                      if (child.type === "Button")
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={handleSubmit}
+                            style={{
+                              padding: "11px 20px",
+                              background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                              fontSize: 14,
+                            }}
+                          >
+                            {child.props?.buttonText || "Submit"}
+                          </button>
+                        );
+                      return (
+                        <FormField
+                          key={child.id}
+                          el={child}
+                          values={values}
+                          errors={errors}
+                          setValue={setValue}
+                        />
+                      );
+                    })}
+                  </AccordionSection>
+                );
+              })}
+              {!allFields.some((e) => e.type === "Button") && (
+                <div style={{ marginTop: 4 }}>{submitBtn}</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Konva builders ───────────────────────────────────────────────────────────
