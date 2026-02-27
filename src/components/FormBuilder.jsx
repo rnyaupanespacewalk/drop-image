@@ -11,7 +11,7 @@ const CONT_MIN_H = 120;
 const CONT_HDR_H = 32;
 const CHILD_W = 220;
 const POPUP_W = 260;
-const RESIZE_HIT = 12; // px area for resize handle
+const RESIZE_HIT = 12;
 
 const C = {
   elFill: "#ffffff",
@@ -93,77 +93,27 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
     window.innerWidth - POPUP_W - 12,
   );
   const top = Math.max(stageRect.top + pos.y, 8);
-  const inp = (sx = {}) => ({
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "5px 8px",
-    border: "1px solid #d1d5db",
-    borderRadius: 5,
-    fontSize: 12,
-    fontFamily: "inherit",
-    outline: "none",
-    ...sx,
-  });
-  const lbl = (t) => (
-    <div
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        color: "#6b7280",
-        marginBottom: 3,
-        marginTop: 10,
-      }}
-    >
-      {t}
-    </div>
-  );
+  const lbl = (t) => <div className="popup_lbl">{t}</div>;
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
-      style={{
-        position: "fixed",
-        left,
-        top,
-        width: POPUP_W,
-        background: "#fff",
-        border: "1px solid #e2e8f0",
-        borderRadius: 10,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
-        padding: "14px 16px 16px",
-        zIndex: 1000,
-        fontSize: 13,
-        fontFamily: "system-ui,sans-serif",
-      }}
+      className="popup-container"
+      style={{ left, top, width: POPUP_W }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 4,
-        }}
-      >
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
+      <div className="popup-header">
+        <div className="popup-title">
           {ICONS[el.type]}&nbsp; {el.type}
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 16,
-            color: "#9ca3af",
-          }}
-        >
+        <button onClick={onClose} className="popup-close-btn">
           ×
         </button>
       </div>
-      <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0" }} />
+
+      <div className="popup-divider" />
 
       {lbl("Field Label")}
       <input
-        style={inp()}
+        className="popup-input"
         value={p.fieldLabel || ""}
         onChange={(e) => onUpdate({ fieldLabel: e.target.value })}
         placeholder="e.g. First Name"
@@ -173,34 +123,26 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
         <>
           {lbl("Placeholder")}
           <input
-            style={inp()}
+            className="popup-input"
             value={p.placeholder || ""}
             onChange={(e) => onUpdate({ placeholder: e.target.value })}
           />
+
           {lbl("Default Value")}
           <input
-            style={inp()}
+            className="popup-input"
             value={p.defaultValue || ""}
             onChange={(e) => onUpdate({ defaultValue: e.target.value })}
           />
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 10,
-            }}
-          >
+
+          <div className="popup-checkbox-row">
             <input
               type="checkbox"
               id={`req_${el.id}`}
               checked={!!p.required}
               onChange={(e) => onUpdate({ required: e.target.checked })}
             />
-            <label
-              htmlFor={`req_${el.id}`}
-              style={{ fontSize: 12, color: "#374151", cursor: "pointer" }}
-            >
+            <label htmlFor={`req_${el.id}`} className="popup-checkbox-label">
               Required
             </label>
           </div>
@@ -211,32 +153,19 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
         <>
           {lbl("Options (one per line)")}
           <textarea
-            style={inp({
-              height: 80,
-              resize: "vertical",
-              fontFamily: "monospace",
-            })}
+            className="popup-input popup-textarea"
             value={(p.options || []).join("\n")}
             onChange={(e) => onUpdate({ options: e.target.value.split("\n") })}
           />
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 10,
-            }}
-          >
+
+          <div className="popup-checkbox-row">
             <input
               type="checkbox"
               id={`req_${el.id}`}
               checked={!!p.required}
               onChange={(e) => onUpdate({ required: e.target.checked })}
             />
-            <label
-              htmlFor={`req_${el.id}`}
-              style={{ fontSize: 12, color: "#374151", cursor: "pointer" }}
-            >
+            <label htmlFor={`req_${el.id}`} className="popup-checkbox-label">
               Required
             </label>
           </div>
@@ -247,7 +176,7 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
         <>
           {lbl("Display Text")}
           <input
-            style={inp()}
+            className="popup-input"
             value={p.text || ""}
             onChange={(e) => onUpdate({ text: e.target.value })}
           />
@@ -258,7 +187,7 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
         <>
           {lbl("Button Text")}
           <input
-            style={inp()}
+            className="popup-input"
             value={p.buttonText || ""}
             onChange={(e) => onUpdate({ buttonText: e.target.value })}
           />
@@ -266,19 +195,7 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
       )}
 
       {(el.type === "Text Input" || el.type === "Dropdown") && p.required && (
-        <div
-          style={{
-            marginTop: 10,
-            background: "#fef3c7",
-            border: "1px solid #fcd34d",
-            borderRadius: 4,
-            padding: "3px 8px",
-            fontSize: 11,
-            color: "#92400e",
-          }}
-        >
-          ⚠ Required field
-        </div>
+        <div className="popup-warning">⚠ Required field</div>
       )}
     </div>
   );
@@ -288,82 +205,41 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
 function FormField({ el, values, errors, setValue }) {
   const p = el.props || {};
   const err = errors[el.id];
-  const inputBase = (hasErr) => ({
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "8px 12px",
-    border: `1.5px solid ${hasErr ? "#ef4444" : "#d1d5db"}`,
-    borderRadius: 6,
-    fontSize: 13,
-    fontFamily: "inherit",
-    outline: "none",
-    background: hasErr ? "#fef2f2" : "#fff",
-    transition: "border-color 0.15s",
-  });
 
   if (el.type === "Label")
-    return (
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#334155",
-          borderLeft: "3px solid " + C.accent,
-          paddingLeft: 10,
-        }}
-      >
-        {p.text || "Label Text"}
-      </div>
-    );
+    return <div className="form-label-block">{p.text || "Label Text"}</div>;
 
   if (el.type === "Text Input")
     return (
       <div>
-        <label
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#475569",
-            display: "block",
-            marginBottom: 5,
-          }}
-        >
+        <label className="form-field-label">
           {p.fieldLabel || "Text Input"}
-          {p.required && <span style={{ color: C.red, marginLeft: 3 }}>*</span>}
+          {p.required && <span className="form-required">*</span>}
         </label>
+
         <input
-          style={inputBase(err)}
+          className={`form-input ${err ? "form-input-error" : ""}`}
           placeholder={p.placeholder || ""}
           defaultValue={p.defaultValue || ""}
           onChange={(e) => setValue(el.id, e.target.value)}
           onFocus={(e) => (e.target.style.borderColor = C.accent)}
           onBlur={(e) => (e.target.style.borderColor = err ? C.red : "#d1d5db")}
         />
-        {err && (
-          <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
-            This field is required
-          </div>
-        )}
+
+        {err && <div className="form-error-text">This field is required</div>}
       </div>
     );
 
   if (el.type === "Dropdown")
     return (
       <div>
-        <label
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#475569",
-            display: "block",
-            marginBottom: 5,
-          }}
-        >
+        <label className="form-field-label">
           {p.fieldLabel || "Dropdown"}
-          {p.required && <span style={{ color: C.red, marginLeft: 3 }}>*</span>}
+          {p.required && <span className="form-required">*</span>}
         </label>
+
         <select
-          style={inputBase(err)}
+          className={`form-input ${err ? "form-input-error" : ""}`}
           value={values[el.id] || ""}
           onChange={(e) => setValue(el.id, e.target.value)}
           onFocus={(e) => (e.target.style.borderColor = C.accent)}
@@ -376,11 +252,8 @@ function FormField({ el, values, errors, setValue }) {
             </option>
           ))}
         </select>
-        {err && (
-          <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
-            This field is required
-          </div>
-        )}
+
+        {err && <div className="form-error-text">This field is required</div>}
       </div>
     );
 
@@ -396,94 +269,37 @@ function AccordionSection({
   defaultOpen = true,
 }) {
   const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <div
-      style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: 10,
-        overflow: "hidden",
-        marginBottom: 4,
-      }}
-    >
+    <div className="accordion-container">
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 16px",
-          background: open ? "#f8faff" : "#f8fafc",
-          border: "none",
-          cursor: "pointer",
-          fontFamily: "inherit",
-          borderBottom: open ? "1px solid #e2e8f0" : "none",
-        }}
+        className={`accordion-header ${open ? "accordion-open" : ""}`}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: "50%",
-              background: C.accent,
-              color: "#fff",
-              fontSize: 11,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {index + 1}
-          </div>
-          <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>
-            {title}
-          </span>
+        <div className="accordion-left">
+          <div className="accordion-index">{index + 1}</div>
+
+          <span className="accordion-title">{title}</span>
+
           {hasErrors && (
-            <span
-              style={{
-                fontSize: 10,
-                color: C.red,
-                background: "#fef2f2",
-                border: "1px solid #fca5a5",
-                borderRadius: 4,
-                padding: "1px 6px",
-              }}
-            >
+            <span className="accordion-error-badge">
               Required fields missing
             </span>
           )}
         </div>
-        <span
-          style={{
-            color: "#94a3b8",
-            fontSize: 16,
-            display: "inline-block",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        >
+
+        <span className={`accordion-icon ${open ? "accordion-icon-open" : ""}`}>
           ▾
         </span>
       </button>
-      {open && (
-        <div
-          style={{
-            padding: "16px 16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-            background: "#fff",
-          }}
-        >
-          {children}
-        </div>
-      )}
+
+      {open && <div className="accordion-content">{children}</div>}
     </div>
   );
 }
 
 // ─── PreviewForm ──────────────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 function PreviewForm({ freeElements, containers, onClose }) {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -494,7 +310,6 @@ function PreviewForm({ freeElements, containers, onClose }) {
     setErrors((e) => ({ ...e, [id]: false }));
   };
 
-  // Sort children by y then x for natural reading order
   const sortedChildren = (children) =>
     [...children].sort((a, b) => (a.cy !== b.cy ? a.cy - b.cy : a.cx - b.cx));
 
@@ -508,262 +323,128 @@ function PreviewForm({ freeElements, containers, onClose }) {
     allFields.forEach((el) => {
       if (el.props?.required && !values[el.id]) newErrors[el.id] = true;
     });
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
     const json = {};
     allFields.forEach((el) => {
       if (el.type === "Button" || el.type === "Label") return;
       json[el.props?.fieldLabel || el.type] =
         values[el.id] ?? el.props?.defaultValue ?? "";
     });
+
     setResult(json);
   };
 
   const submitBtn = (
-    <button
-      onClick={handleSubmit}
-      style={{
-        padding: "11px 20px",
-        background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
-        color: "#fff",
-        border: "none",
-        borderRadius: 8,
-        cursor: "pointer",
-        fontWeight: 700,
-        fontSize: 14,
-        boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
-      }}
-    >
+    <button onClick={handleSubmit} className="pfv-submit-btn">
       Submit Form
     </button>
   );
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15,23,42,0.55)",
-        zIndex: 2000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          background: "#f8fafc",
-          borderRadius: 16,
-          boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
-          width: 520,
-          maxHeight: "85vh",
-          overflowY: "auto",
-          fontFamily: "system-ui,sans-serif",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "20px 24px 16px",
-            background: "#fff",
-            borderRadius: "16px 16px 0 0",
-            borderBottom: "1px solid #e2e8f0",
-          }}
-        >
+    <div className="pfv-root">
+      <div className="pfv-inner">
+        {result ? (
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#1e293b" }}>
-              Preview Mode
+            <div className="pfv-success-box">
+              <span className="pfv-success-icon">✓</span>
+              <span className="pfv-success-text">
+                Form submitted successfully!
+              </span>
             </div>
-            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
-              Interacting as an end user
+
+            <div className="pfv-json-box">
+              <span className="pfv-json-label">Form Data (JSON)</span>
+              {JSON.stringify(result, null, 2)}
             </div>
+
+            <button
+              onClick={() => {
+                setResult(null);
+                setValues({});
+                setErrors({});
+              }}
+              className="pfv-reset-btn"
+            >
+              ↺ Reset &amp; Fill Again
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "#f1f5f9",
-              border: "none",
-              borderRadius: 8,
-              width: 32,
-              height: 32,
-              cursor: "pointer",
-              fontSize: 18,
-              color: "#64748b",
-            }}
-          >
-            ×
-          </button>
-        </div>
-        <div style={{ padding: "20px 24px 24px" }}>
-          {result ? (
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 16,
-                  padding: "12px 16px",
-                  background: "#d1fae5",
-                  borderRadius: 8,
-                }}
-              >
-                <span style={{ fontSize: 20 }}>✓</span>
-                <span
-                  style={{ fontWeight: 600, color: "#065f46", fontSize: 14 }}
-                >
-                  Form submitted successfully!
-                </span>
+        ) : (
+          <div className="pfv-stack">
+            {freeElements.length > 0 && (
+              <div className="pfv-free-container">
+                {freeElements.map((el) => {
+                  if (el.type === "Button")
+                    return (
+                      <button
+                        key={el.id}
+                        onClick={handleSubmit}
+                        className="pfv-submit-btn"
+                      >
+                        {el.props?.buttonText || "Submit"}
+                      </button>
+                    );
+
+                  return (
+                    <FormField
+                      key={el.id}
+                      el={el}
+                      values={values}
+                      errors={errors}
+                      setValue={setValue}
+                    />
+                  );
+                })}
               </div>
-              <div
-                style={{
-                  background: "#1e293b",
-                  borderRadius: 8,
-                  padding: "16px",
-                  fontFamily: "monospace",
-                  fontSize: 12,
-                  color: "#94a3b8",
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.7,
-                }}
-              >
-                <span
-                  style={{
-                    color: "#64748b",
-                    fontSize: 10,
-                    display: "block",
-                    marginBottom: 8,
-                    fontFamily: "system-ui",
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                  }}
+            )}
+
+            {containers.map((cont, idx) => {
+              const sorted = sortedChildren(cont.children);
+              const contErrors = sorted.some((ch) => errors[ch.id]);
+
+              return (
+                <AccordionSection
+                  key={cont.id}
+                  title={`Container ${idx + 1}`}
+                  index={idx}
+                  hasErrors={contErrors}
+                  defaultOpen={idx === 0}
                 >
-                  Form Data (JSON)
-                </span>
-                {JSON.stringify(result, null, 2)}
-              </div>
-              <button
-                onClick={() => {
-                  setResult(null);
-                  setValues({});
-                  setErrors({});
-                }}
-                style={{
-                  marginTop: 16,
-                  width: "100%",
-                  padding: "10px",
-                  background: C.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: 13,
-                }}
-              >
-                ↺ Reset &amp; Fill Again
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {freeElements.length > 0 && (
-                <div
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 10,
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 14,
-                  }}
-                >
-                  {freeElements.map((el) => {
-                    if (el.type === "Button")
+                  {sorted.map((child) => {
+                    if (child.type === "Button")
                       return (
                         <button
-                          key={el.id}
+                          key={child.id}
                           onClick={handleSubmit}
-                          style={{
-                            padding: "11px 20px",
-                            background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: 700,
-                            fontSize: 14,
-                          }}
+                          className="pfv-submit-btn"
                         >
-                          {el.props?.buttonText || "Submit"}
+                          {child.props?.buttonText || "Submit"}
                         </button>
                       );
+
                     return (
                       <FormField
-                        key={el.id}
-                        el={el}
+                        key={child.id}
+                        el={child}
                         values={values}
                         errors={errors}
                         setValue={setValue}
                       />
                     );
                   })}
-                </div>
-              )}
-              {containers.map((cont, idx) => {
-                const sorted = sortedChildren(cont.children);
-                const contErrors = sorted.some((ch) => errors[ch.id]);
-                return (
-                  <AccordionSection
-                    key={cont.id}
-                    title={`Container ${idx + 1}`}
-                    index={idx}
-                    hasErrors={contErrors}
-                    defaultOpen={idx === 0}
-                  >
-                    {sorted.map((child) => {
-                      if (child.type === "Button")
-                        return (
-                          <button
-                            key={child.id}
-                            onClick={handleSubmit}
-                            style={{
-                              padding: "11px 20px",
-                              background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: 8,
-                              cursor: "pointer",
-                              fontWeight: 700,
-                              fontSize: 14,
-                            }}
-                          >
-                            {child.props?.buttonText || "Submit"}
-                          </button>
-                        );
-                      return (
-                        <FormField
-                          key={child.id}
-                          el={child}
-                          values={values}
-                          errors={errors}
-                          setValue={setValue}
-                        />
-                      );
-                    })}
-                  </AccordionSection>
-                );
-              })}
-              {!allFields.some((e) => e.type === "Button") && (
-                <div style={{ marginTop: 4 }}>{submitBtn}</div>
-              )}
-            </div>
-          )}
-        </div>
+                </AccordionSection>
+              );
+            })}
+
+            {!allFields.some((e) => e.type === "Button") && (
+              <div className="pfv-submit-wrapper">{submitBtn}</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1017,7 +698,6 @@ function buildChild(child, cbs) {
       shadowColor: "rgba(0,0,0,0.05)",
     });
     grp.getStage().container().style.cursor = "default";
-    const pAbs = grp.getParent().getAbsolutePosition();
     cbs.onDragEnd(child.id, grp.x(), grp.y());
   });
   grp.on("click tap", (e) => {
@@ -1541,45 +1221,12 @@ export default function FormBuilderFreeCanvas() {
   ];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        fontFamily: "system-ui,sans-serif",
-      }}
-    >
+    <div className="fb-root">
       {/* Top bar */}
-      <div
-        style={{
-          height: 52,
-          background: "#1e293b",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 24px",
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            color: "#e2e8f0",
-            fontWeight: 700,
-            fontSize: 15,
-            letterSpacing: 0.3,
-          }}
-        >
-          Form Builder
-        </div>
-        <div
-          style={{
-            display: "flex",
-            background: "#0f172a",
-            borderRadius: 8,
-            padding: 3,
-            gap: 2,
-          }}
-        >
+      <div className="fb-topbar">
+        <div className="fb-title">Form Builder</div>
+
+        <div className="fb-mode-toggle">
           {["edit", "preview"].map((m) => (
             <button
               key={m}
@@ -1587,123 +1234,60 @@ export default function FormBuilderFreeCanvas() {
                 setMode(m);
                 setPopup(null);
               }}
-              style={{
-                padding: "5px 18px",
-                borderRadius: 6,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-                background: mode === m ? "#6366f1" : "transparent",
-                color: mode === m ? "#fff" : "#64748b",
-                transition: "all 0.15s",
-              }}
+              className={`fb-mode-btn ${
+                mode === m ? "fb-mode-btn-active" : ""
+              }`}
             >
               {m === "edit" ? "✏ Edit" : "▶ Preview"}
             </button>
           ))}
         </div>
-        <div style={{ color: "#475569", fontSize: 11 }}>
-          {totalElements} element(s)
-        </div>
+
+        <div className="fb-counter">{totalElements} element(s)</div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div className="fb-main">
         {/* Sidebar */}
-        {!isPreview && (
-          <div
-            style={{
-              width: SIDEBAR_W,
-              background: "#1e293b",
-              padding: "16px 12px",
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
+        <div className="fb-sidebar" style={{ width: SIDEBAR_W }}>
+          <div className="fb-sidebar-title">Components</div>
+
+          {SIDEBAR_ITEMS.map((item) => (
             <div
-              style={{
-                color: "#64748b",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                marginBottom: 4,
-              }}
+              key={item.type}
+              draggable
+              onDragStart={(e) =>
+                e.dataTransfer.setData(
+                  "componentType",
+                  JSON.stringify({ type: item.type, label: item.label }),
+                )
+              }
+              className={`fb-sidebar-item ${
+                item.type === "container" ? "fb-sidebar-container" : ""
+              }`}
             >
-              Components
+              <span>
+                {item.type === "container" ? "📦" : ICONS[item.label]}
+              </span>
+              {item.label}
             </div>
-            {SIDEBAR_ITEMS.map((item) => (
-              <div
-                key={item.type}
-                draggable
-                onDragStart={(e) =>
-                  e.dataTransfer.setData(
-                    "componentType",
-                    JSON.stringify({ type: item.type, label: item.label }),
-                  )
-                }
-                style={{
-                  padding: "9px 12px",
-                  background: item.type === "container" ? "#172554" : "#334155",
-                  border:
-                    item.type === "container"
-                      ? "1px dashed #3b5bdb"
-                      : "1px solid #475569",
-                  borderRadius: 6,
-                  cursor: "grab",
-                  fontSize: 13,
-                  color: "#e2e8f0",
-                  userSelect: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span>
-                  {item.type === "container" ? "📦" : ICONS[item.label]}
-                </span>
-                {item.label}
-              </div>
-            ))}
-            <div
-              style={{
-                marginTop: "auto",
-                color: "#475569",
-                fontSize: 10,
-                lineHeight: 2,
-              }}
-            >
-              • Drag to canvas
-              <br />
-              • Drop on container to group
-              <br />
-              • Drag freely inside container
-              <br />
-              • Resize container (↘ corner)
-              <br />
-              • Click → edit properties
-              <br />• Hover → ✕ to delete
-            </div>
+          ))}
+
+          <div className="fb-sidebar-hint">
+            • Drag to canvas
+            <br />
+            • Drop on container to group
+            <br />
+            • Drag freely inside container
+            <br />
+            • Resize container (↘ corner)
+            <br />
+            • Click → edit properties
+            <br />• Hover → ✕ to delete
           </div>
-        )}
+        </div>
 
         {/* Canvas */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-          <div
-            ref={wrapRef}
-            onDrop={!isPreview ? handleDrop : undefined}
-            onDragOver={!isPreview ? (e) => e.preventDefault() : undefined}
-            style={{
-              width: "100%",
-              height: STAGE_H,
-              background: C.stageBg,
-              opacity: isPreview ? 0.35 : 1,
-              transition: "opacity 0.2s",
-              pointerEvents: isPreview ? "none" : "auto",
-            }}
-          />
+        <div className="fb-canvas-wrapper">
           {!isPreview && popup && popupEl && (
             <Popup
               el={popupEl}
@@ -1713,31 +1297,35 @@ export default function FormBuilderFreeCanvas() {
               onClose={() => setPopup(null)}
             />
           )}
+
           {isPreview && totalElements === 0 && (
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%,-50%)",
-                color: "#94a3b8",
-                fontSize: 14,
-                textAlign: "center",
-              }}
-            >
+            <div className="fb-empty-state">
               No elements yet — switch to Edit mode to add some.
             </div>
           )}
+
+          {isPreview && totalElements > 0 ? (
+            <PreviewForm
+              freeElements={freeEls}
+              containers={conts}
+              onClose={() => setMode("edit")}
+            />
+          ) : (
+            <div
+              ref={wrapRef}
+              onDrop={!isPreview ? handleDrop : undefined}
+              onDragOver={!isPreview ? (e) => e.preventDefault() : undefined}
+              className="fb-stage"
+              style={{
+                height: STAGE_H,
+                background: C.stageBg,
+                opacity: isPreview ? 0.35 : 1,
+                pointerEvents: isPreview ? "none" : "auto",
+              }}
+            />
+          )}
         </div>
       </div>
-
-      {isPreview && totalElements > 0 && (
-        <PreviewForm
-          freeElements={freeEls}
-          containers={conts}
-          onClose={() => setMode("edit")}
-        />
-      )}
     </div>
   );
 }

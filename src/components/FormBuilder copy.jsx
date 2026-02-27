@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Konva from "konva";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -6,12 +6,12 @@ const SIDEBAR_W = 170;
 const STAGE_H = 620;
 const EL_W = 220;
 const EL_H = 48;
-const EL_GAP = 8;
-const CONT_W = 260;
+const CONT_MIN_W = 280;
+const CONT_MIN_H = 120;
 const CONT_HDR_H = 32;
-const CONT_PAD = 12;
-const CHILD_W = CONT_W - CONT_PAD * 2;
+const CHILD_W = 220;
 const POPUP_W = 260;
+const RESIZE_HIT = 12; // px area for resize handle
 
 const C = {
   elFill: "#ffffff",
@@ -59,25 +59,9 @@ let _uid = 1;
 const uid = () => _uid++;
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
-const contHeight = (n) =>
-  n === 0
-    ? CONT_HDR_H + CONT_PAD * 2 + 24
-    : CONT_HDR_H + CONT_PAD + n * (EL_H + EL_GAP) + CONT_PAD;
-const childRelY = (idx) => CONT_HDR_H + CONT_PAD + idx * (EL_H + EL_GAP);
-const dragToIdx = (relY, count) =>
-  Math.max(
-    0,
-    Math.min(
-      count - 1,
-      Math.floor(
-        (relY - CONT_HDR_H - CONT_PAD + (EL_H + EL_GAP) / 2) / (EL_H + EL_GAP),
-      ),
-    ),
-  );
-const ptInCont = (c, px, py) => {
-  const h = contHeight(c.children.length);
-  return px >= c.x && px <= c.x + CONT_W && py >= c.y && py <= c.y + h;
-};
+const ptInCont = (c, px, py) =>
+  px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h;
+
 const hitCont = (cs, px, py) => {
   for (let i = cs.length - 1; i >= 0; i--)
     if (ptInCont(cs[i], px, py)) return cs[i];
@@ -101,7 +85,7 @@ function setCardTexts(grp, el) {
   grp.getLayer()?.batchDraw();
 }
 
-// ─── Popup (edit mode) ───────────────────────────────────────────────────────
+// ─── Popup ────────────────────────────────────────────────────────────────────
 function Popup({ el, pos, stageRect, onUpdate, onClose }) {
   const p = el.props || {};
   const left = Math.min(
@@ -133,7 +117,6 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
       {t}
     </div>
   );
-
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
@@ -193,14 +176,12 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
             style={inp()}
             value={p.placeholder || ""}
             onChange={(e) => onUpdate({ placeholder: e.target.value })}
-            placeholder="e.g. Enter your name…"
           />
           {lbl("Default Value")}
           <input
             style={inp()}
             value={p.defaultValue || ""}
             onChange={(e) => onUpdate({ defaultValue: e.target.value })}
-            placeholder="Pre-filled value"
           />
           <div
             style={{
@@ -303,9 +284,207 @@ function Popup({ el, pos, stageRect, onUpdate, onClose }) {
   );
 }
 
-// ─── Preview mode: renders a real interactive form ────────────────────────────
-function PreviewForm({ allElements, onClose }) {
-  // Flatten all elements in order: free elements then container children
+// ─── FormField ────────────────────────────────────────────────────────────────
+function FormField({ el, values, errors, setValue }) {
+  const p = el.props || {};
+  const err = errors[el.id];
+  const inputBase = (hasErr) => ({
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "8px 12px",
+    border: `1.5px solid ${hasErr ? "#ef4444" : "#d1d5db"}`,
+    borderRadius: 6,
+    fontSize: 13,
+    fontFamily: "inherit",
+    outline: "none",
+    background: hasErr ? "#fef2f2" : "#fff",
+    transition: "border-color 0.15s",
+  });
+
+  if (el.type === "Label")
+    return (
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#334155",
+          borderLeft: "3px solid " + C.accent,
+          paddingLeft: 10,
+        }}
+      >
+        {p.text || "Label Text"}
+      </div>
+    );
+
+  if (el.type === "Text Input")
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#475569",
+            display: "block",
+            marginBottom: 5,
+          }}
+        >
+          {p.fieldLabel || "Text Input"}
+          {p.required && <span style={{ color: C.red, marginLeft: 3 }}>*</span>}
+        </label>
+        <input
+          style={inputBase(err)}
+          placeholder={p.placeholder || ""}
+          defaultValue={p.defaultValue || ""}
+          onChange={(e) => setValue(el.id, e.target.value)}
+          onFocus={(e) => (e.target.style.borderColor = C.accent)}
+          onBlur={(e) => (e.target.style.borderColor = err ? C.red : "#d1d5db")}
+        />
+        {err && (
+          <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
+            This field is required
+          </div>
+        )}
+      </div>
+    );
+
+  if (el.type === "Dropdown")
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#475569",
+            display: "block",
+            marginBottom: 5,
+          }}
+        >
+          {p.fieldLabel || "Dropdown"}
+          {p.required && <span style={{ color: C.red, marginLeft: 3 }}>*</span>}
+        </label>
+        <select
+          style={inputBase(err)}
+          value={values[el.id] || ""}
+          onChange={(e) => setValue(el.id, e.target.value)}
+          onFocus={(e) => (e.target.style.borderColor = C.accent)}
+          onBlur={(e) => (e.target.style.borderColor = err ? C.red : "#d1d5db")}
+        >
+          <option value="">Select…</option>
+          {(p.options || []).filter(Boolean).map((opt, i) => (
+            <option key={i} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        {err && (
+          <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
+            This field is required
+          </div>
+        )}
+      </div>
+    );
+
+  return null;
+}
+
+// ─── AccordionSection ─────────────────────────────────────────────────────────
+function AccordionSection({
+  title,
+  index,
+  children,
+  hasErrors,
+  defaultOpen = true,
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div
+      style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: 10,
+        overflow: "hidden",
+        marginBottom: 4,
+      }}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 16px",
+          background: open ? "#f8faff" : "#f8fafc",
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          borderBottom: open ? "1px solid #e2e8f0" : "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: "50%",
+              background: C.accent,
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {index + 1}
+          </div>
+          <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>
+            {title}
+          </span>
+          {hasErrors && (
+            <span
+              style={{
+                fontSize: 10,
+                color: C.red,
+                background: "#fef2f2",
+                border: "1px solid #fca5a5",
+                borderRadius: 4,
+                padding: "1px 6px",
+              }}
+            >
+              Required fields missing
+            </span>
+          )}
+        </div>
+        <span
+          style={{
+            color: "#94a3b8",
+            fontSize: 16,
+            display: "inline-block",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          style={{
+            padding: "16px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+            background: "#fff",
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PreviewForm ──────────────────────────────────────────────────────────────
+function PreviewForm({ freeElements, containers, onClose }) {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
   const [result, setResult] = useState(null);
@@ -315,18 +494,26 @@ function PreviewForm({ allElements, onClose }) {
     setErrors((e) => ({ ...e, [id]: false }));
   };
 
+  // Sort children by y then x for natural reading order
+  const sortedChildren = (children) =>
+    [...children].sort((a, b) => (a.cy !== b.cy ? a.cy - b.cy : a.cx - b.cx));
+
+  const allFields = [
+    ...freeElements,
+    ...containers.flatMap((c) => sortedChildren(c.children)),
+  ];
+
   const handleSubmit = () => {
     const newErrors = {};
-    allElements.forEach((el) => {
+    allFields.forEach((el) => {
       if (el.props?.required && !values[el.id]) newErrors[el.id] = true;
     });
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-
     const json = {};
-    allElements.forEach((el) => {
+    allFields.forEach((el) => {
       if (el.type === "Button" || el.type === "Label") return;
       json[el.props?.fieldLabel || el.type] =
         values[el.id] ?? el.props?.defaultValue ?? "";
@@ -334,18 +521,24 @@ function PreviewForm({ allElements, onClose }) {
     setResult(json);
   };
 
-  const inputBase = (hasErr) => ({
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "8px 12px",
-    border: `1.5px solid ${hasErr ? "#ef4444" : "#d1d5db"}`,
-    borderRadius: 6,
-    fontSize: 14,
-    fontFamily: "inherit",
-    outline: "none",
-    background: hasErr ? "#fef2f2" : "#fff",
-    transition: "border-color 0.15s",
-  });
+  const submitBtn = (
+    <button
+      onClick={handleSubmit}
+      style={{
+        padding: "11px 20px",
+        background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
+        color: "#fff",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontWeight: 700,
+        fontSize: 14,
+        boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+      }}
+    >
+      Submit Form
+    </button>
+  );
 
   return (
     <div
@@ -361,31 +554,32 @@ function PreviewForm({ allElements, onClose }) {
     >
       <div
         style={{
-          background: "#fff",
+          background: "#f8fafc",
           borderRadius: 16,
           boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
-          width: 480,
-          maxHeight: "80vh",
+          width: 520,
+          maxHeight: "85vh",
           overflowY: "auto",
-          padding: "28px 32px",
           fontFamily: "system-ui,sans-serif",
         }}
       >
-        {/* Header */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 20,
+            padding: "20px 24px 16px",
+            background: "#fff",
+            borderRadius: "16px 16px 0 0",
+            borderBottom: "1px solid #e2e8f0",
           }}
         >
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#1e293b" }}>
               Preview Mode
             </div>
-            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
-              Fill in the form as an end user
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+              Interacting as an end user
             </div>
           </div>
           <button
@@ -399,235 +593,184 @@ function PreviewForm({ allElements, onClose }) {
               cursor: "pointer",
               fontSize: 18,
               color: "#64748b",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
             }}
           >
             ×
           </button>
         </div>
-
-        {result ? (
-          /* ── Result view ── */
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
-              }}
-            >
+        <div style={{ padding: "20px 24px 24px" }}>
+          {result ? (
+            <div>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  background: "#d1fae5",
-                  borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 18,
+                  gap: 10,
+                  marginBottom: 16,
+                  padding: "12px 16px",
+                  background: "#d1fae5",
+                  borderRadius: 8,
                 }}
               >
-                ✓
+                <span style={{ fontSize: 20 }}>✓</span>
+                <span
+                  style={{ fontWeight: 600, color: "#065f46", fontSize: 14 }}
+                >
+                  Form submitted successfully!
+                </span>
               </div>
-              <div style={{ fontWeight: 600, color: "#065f46" }}>
-                Form submitted!
-              </div>
-            </div>
-            <div
-              style={{
-                background: "#f8fafc",
-                borderRadius: 8,
-                border: "1px solid #e2e8f0",
-                padding: "14px 16px",
-                fontFamily: "monospace",
-                fontSize: 12,
-                color: "#334155",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {JSON.stringify(result, null, 2)}
-            </div>
-            <button
-              onClick={() => {
-                setResult(null);
-                setValues({});
-                setErrors({});
-              }}
-              style={{
-                marginTop: 16,
-                width: "100%",
-                padding: "10px",
-                background: C.accent,
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 14,
-              }}
-            >
-              Reset Form
-            </button>
-          </div>
-        ) : (
-          /* ── Form fields ── */
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {allElements.map((el) => {
-              const p = el.props || {};
-              const err = errors[el.id];
-
-              if (el.type === "Label")
-                return (
-                  <div
-                    key={el.id}
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: "#334155",
-                      borderLeft: "3px solid " + C.accent,
-                      paddingLeft: 10,
-                    }}
-                  >
-                    {p.text || "Label Text"}
-                  </div>
-                );
-
-              if (el.type === "Button")
-                return (
-                  <button
-                    key={el.id}
-                    onClick={handleSubmit}
-                    style={{
-                      padding: "11px 20px",
-                      background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      letterSpacing: 0.3,
-                      boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
-                    }}
-                  >
-                    {p.buttonText || "Submit"}
-                  </button>
-                );
-
-              if (el.type === "Text Input")
-                return (
-                  <div key={el.id}>
-                    <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#475569",
-                        display: "block",
-                        marginBottom: 5,
-                      }}
-                    >
-                      {p.fieldLabel || "Text Input"}
-                      {p.required && (
-                        <span style={{ color: C.red, marginLeft: 3 }}>*</span>
-                      )}
-                    </label>
-                    <input
-                      style={inputBase(err)}
-                      placeholder={p.placeholder || ""}
-                      defaultValue={p.defaultValue || ""}
-                      onChange={(e) => setValue(el.id, e.target.value)}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = C.accent;
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = err ? C.red : "#d1d5db";
-                      }}
-                    />
-                    {err && (
-                      <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
-                        This field is required
-                      </div>
-                    )}
-                  </div>
-                );
-
-              if (el.type === "Dropdown")
-                return (
-                  <div key={el.id}>
-                    <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#475569",
-                        display: "block",
-                        marginBottom: 5,
-                      }}
-                    >
-                      {p.fieldLabel || "Dropdown"}
-                      {p.required && (
-                        <span style={{ color: C.red, marginLeft: 3 }}>*</span>
-                      )}
-                    </label>
-                    <select
-                      style={inputBase(err)}
-                      value={values[el.id] || ""}
-                      onChange={(e) => setValue(el.id, e.target.value)}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = C.accent;
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = err ? C.red : "#d1d5db";
-                      }}
-                    >
-                      <option value="">Select…</option>
-                      {(p.options || []).filter(Boolean).map((opt, i) => (
-                        <option key={i} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                    {err && (
-                      <div style={{ fontSize: 11, color: C.red, marginTop: 3 }}>
-                        This field is required
-                      </div>
-                    )}
-                  </div>
-                );
-
-              return null;
-            })}
-
-            {/* If no button element exists, show a default submit */}
-            {!allElements.some((e) => e.type === "Button") && (
-              <button
-                onClick={handleSubmit}
+              <div
                 style={{
-                  padding: "11px 20px",
-                  background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
+                  background: "#1e293b",
+                  borderRadius: 8,
+                  padding: "16px",
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  color: "#94a3b8",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.7,
+                }}
+              >
+                <span
+                  style={{
+                    color: "#64748b",
+                    fontSize: 10,
+                    display: "block",
+                    marginBottom: 8,
+                    fontFamily: "system-ui",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  Form Data (JSON)
+                </span>
+                {JSON.stringify(result, null, 2)}
+              </div>
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setValues({});
+                  setErrors({});
+                }}
+                style={{
+                  marginTop: 16,
+                  width: "100%",
+                  padding: "10px",
+                  background: C.accent,
                   color: "#fff",
                   border: "none",
                   borderRadius: 8,
                   cursor: "pointer",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+                  fontWeight: 600,
+                  fontSize: 13,
                 }}
               >
-                Submit
+                ↺ Reset &amp; Fill Again
               </button>
-            )}
-          </div>
-        )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {freeElements.length > 0 && (
+                <div
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 10,
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14,
+                  }}
+                >
+                  {freeElements.map((el) => {
+                    if (el.type === "Button")
+                      return (
+                        <button
+                          key={el.id}
+                          onClick={handleSubmit}
+                          style={{
+                            padding: "11px 20px",
+                            background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: 700,
+                            fontSize: 14,
+                          }}
+                        >
+                          {el.props?.buttonText || "Submit"}
+                        </button>
+                      );
+                    return (
+                      <FormField
+                        key={el.id}
+                        el={el}
+                        values={values}
+                        errors={errors}
+                        setValue={setValue}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+              {containers.map((cont, idx) => {
+                const sorted = sortedChildren(cont.children);
+                const contErrors = sorted.some((ch) => errors[ch.id]);
+                return (
+                  <AccordionSection
+                    key={cont.id}
+                    title={`Container ${idx + 1}`}
+                    index={idx}
+                    hasErrors={contErrors}
+                    defaultOpen={idx === 0}
+                  >
+                    {sorted.map((child) => {
+                      if (child.type === "Button")
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={handleSubmit}
+                            style={{
+                              padding: "11px 20px",
+                              background: `linear-gradient(135deg, ${C.accent}, #818cf8)`,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                              fontSize: 14,
+                            }}
+                          >
+                            {child.props?.buttonText || "Submit"}
+                          </button>
+                        );
+                      return (
+                        <FormField
+                          key={child.id}
+                          el={child}
+                          values={values}
+                          errors={errors}
+                          setValue={setValue}
+                        />
+                      );
+                    })}
+                  </AccordionSection>
+                );
+              })}
+              {!allFields.some((e) => e.type === "Button") && (
+                <div style={{ marginTop: 4 }}>{submitBtn}</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Konva node builders ──────────────────────────────────────────────────────
+// ─── Konva builders ───────────────────────────────────────────────────────────
+
 function buildFreeEl(el, cbs) {
   const grp = new Konva.Group({
     x: el.x,
@@ -741,13 +884,15 @@ function buildFreeEl(el, cbs) {
   return grp;
 }
 
-function buildChild(child, idx, cont, cbs) {
+// Child element — freely placed inside container, can be dragged anywhere inside
+function buildChild(child, cbs) {
   const grp = new Konva.Group({
-    x: CONT_PAD,
-    y: childRelY(idx),
+    x: child.cx,
+    y: child.cy,
     draggable: true,
     id: "child_" + child.id,
   });
+
   const bg = new Konva.Rect({
     width: CHILD_W,
     height: EL_H,
@@ -755,6 +900,10 @@ function buildChild(child, idx, cont, cbs) {
     stroke: C.elStroke,
     strokeWidth: 1,
     cornerRadius: 5,
+    shadowColor: "rgba(0,0,0,0.05)",
+    shadowBlur: 4,
+    shadowOffsetY: 1,
+    shadowOpacity: 1,
   });
   grp.add(bg);
   grp.add(
@@ -798,43 +947,15 @@ function buildChild(child, idx, cont, cbs) {
     }),
   );
 
-  const mkBtn = (x, y, txt, clr, onClick) => {
-    const g = new Konva.Group({ x, y, opacity: 0 });
-    g.add(
-      new Konva.Rect({ width: 18, height: 16, fill: clr, cornerRadius: 3 }),
-    );
-    g.add(
-      new Konva.Text({ x: 3, y: 1, text: txt, fontSize: 12, fill: C.accent }),
-    );
-    g.on("click tap", (e) => {
-      e.cancelBubble = true;
-      onClick();
-    });
-    g.on(
-      "mouseenter",
-      () => (grp.getStage().container().style.cursor = "pointer"),
-    );
-    g.on(
-      "mouseleave",
-      () => (grp.getStage().container().style.cursor = "grab"),
-    );
-    return g;
-  };
-  const up = mkBtn(CHILD_W - 46, 10, "↑", C.arrowBg, () =>
-    cbs.onMoveUp(child.id),
-  );
-  grp.add(up);
-  const dn = mkBtn(CHILD_W - 26, 10, "↓", C.arrowBg, () =>
-    cbs.onMoveDown(child.id),
-  );
-  grp.add(dn);
-
-  const del = new Konva.Group({ x: CHILD_W - 46, y: 28, opacity: 0 });
+  const del = new Konva.Group({
+    x: CHILD_W - 22,
+    y: EL_H - 20,
+    opacity: 0,
+    name: "del",
+  });
+  del.add(new Konva.Circle({ radius: 9, fill: C.redBg }));
   del.add(
-    new Konva.Rect({ width: 38, height: 14, fill: C.redBg, cornerRadius: 3 }),
-  );
-  del.add(
-    new Konva.Text({ x: 6, y: 2, text: "✕ remove", fontSize: 8, fill: C.red }),
+    new Konva.Text({ x: -4, y: -5, text: "✕", fontSize: 10, fill: C.red }),
   );
   del.on("click tap", (e) => {
     e.cancelBubble = true;
@@ -850,45 +971,34 @@ function buildChild(child, idx, cont, cbs) {
   );
   grp.add(del);
 
-  const showBtns = (v) =>
-    [up, dn, del].forEach((b) => b.to({ opacity: v, duration: 0.12 }));
   grp.on("mouseenter", () => {
     bg.stroke(C.accent);
-    showBtns(1);
+    del.to({ opacity: 1, duration: 0.12 });
     grp.getStage().container().style.cursor = "grab";
     grp.getLayer().batchDraw();
   });
   grp.on("mouseleave", () => {
     bg.stroke(C.elStroke);
-    showBtns(0);
+    del.to({ opacity: 0, duration: 0.12 });
     grp.getStage().container().style.cursor = "default";
     grp.getLayer().batchDraw();
   });
-  grp.on("click tap", (e) => {
-    const n = e.target.name();
-    if (
-      !n.includes("up") &&
-      !n.includes("dn") &&
-      !n.includes("del") &&
-      !n.includes("remove")
-    )
-      cbs.onClick(child.id, grp.getAbsolutePosition());
-  });
 
-  let originIdx = idx;
+  // Clamp drag within parent container
   grp.dragBoundFunc((pos) => {
+    const cont = cbs.getCont();
     const pAbs = grp.getParent().getAbsolutePosition();
-    const kids = cbs.getContChildren();
+    const minX = pAbs.x + 4;
+    const minY = pAbs.y + CONT_HDR_H + 4;
+    const maxX = pAbs.x + cont.w - CHILD_W - 4;
+    const maxY = pAbs.y + cont.h - EL_H - 4;
     return {
-      x: pAbs.x + CONT_PAD,
-      y: Math.max(
-        pAbs.y + childRelY(0),
-        Math.min(pAbs.y + childRelY(kids.length - 1), pos.y),
-      ),
+      x: Math.max(minX, Math.min(maxX, pos.x)),
+      y: Math.max(minY, Math.min(maxY, pos.y)),
     };
   });
+
   grp.on("dragstart", () => {
-    originIdx = cbs.getCurrentIdx(child.id);
     bg.setAttrs({
       stroke: C.accent,
       shadowColor: C.accent,
@@ -900,11 +1010,19 @@ function buildChild(child, idx, cont, cbs) {
     cbs.onDragStart();
   });
   grp.on("dragend", () => {
-    bg.setAttrs({ stroke: C.elStroke, shadowBlur: 0, shadowOpacity: 0 });
+    bg.setAttrs({
+      stroke: C.elStroke,
+      shadowBlur: 4,
+      shadowOpacity: 0.05,
+      shadowColor: "rgba(0,0,0,0.05)",
+    });
     grp.getStage().container().style.cursor = "default";
     const pAbs = grp.getParent().getAbsolutePosition();
-    const relY = grp.getAbsolutePosition().y - pAbs.y;
-    cbs.onDragReorder(originIdx, dragToIdx(relY, cbs.getContChildren().length));
+    cbs.onDragEnd(child.id, grp.x(), grp.y());
+  });
+  grp.on("click tap", (e) => {
+    if (!e.target.name().includes("del"))
+      cbs.onClick(child.id, grp.getAbsolutePosition());
   });
   return grp;
 }
@@ -916,17 +1034,23 @@ function buildContainer(cont, cbs) {
     draggable: true,
     id: "cont_" + cont.id,
   });
+
   const bg = new Konva.Rect({
-    width: CONT_W,
-    height: contHeight(cont.children.length),
+    width: cont.w,
+    height: cont.h,
     fill: C.contFill,
     stroke: C.contStroke,
     strokeWidth: 1.5,
     dash: [6, 4],
     cornerRadius: 8,
     name: "bg",
+    shadowColor: "rgba(0,0,0,0.06)",
+    shadowBlur: 8,
+    shadowOffsetY: 2,
+    shadowOpacity: 1,
   });
   grp.add(bg);
+
   grp.add(
     new Konva.Text({
       x: 14,
@@ -937,20 +1061,52 @@ function buildContainer(cont, cbs) {
       fill: C.contTitle,
     }),
   );
+
   grp.add(
     new Konva.Text({
-      x: CONT_W / 2 - 55,
-      y: CONT_HDR_H + 18,
-      text: "Drop elements here",
+      name: "hint",
+      text: "Drop elements here — drag freely inside",
       fontSize: 11,
       fill: C.hint,
       visible: cont.children.length === 0,
-      name: "hint",
+      // positioned dynamically via sync
+      x: 0,
+      y: 0,
     }),
   );
 
+  // Resize handle (bottom-right corner)
+  const resizeHandle = new Konva.Group({
+    x: cont.w - RESIZE_HIT,
+    y: cont.h - RESIZE_HIT,
+    name: "resize",
+  });
+  resizeHandle.add(
+    new Konva.Rect({
+      width: RESIZE_HIT,
+      height: RESIZE_HIT,
+      fill: "transparent",
+    }),
+  );
+  // Visual grip dots
+  for (let r = 0; r < 3; r++) {
+    for (let c2 = 0; c2 < 3; c2++) {
+      if (r + c2 < 2) continue; // only bottom-right triangle
+      resizeHandle.add(
+        new Konva.Circle({
+          x: 3 + c2 * 4,
+          y: 3 + r * 4,
+          radius: 1.5,
+          fill: C.contStroke,
+        }),
+      );
+    }
+  }
+  grp.add(resizeHandle);
+
+  // Delete button
   const del = new Konva.Group({
-    x: CONT_W - 22,
+    x: cont.w - 22,
     y: 8,
     opacity: 0,
     name: "del",
@@ -985,23 +1141,34 @@ function buildContainer(cont, cbs) {
     grp.getStage().container().style.cursor = "default";
     grp.getLayer().batchDraw();
   });
-  grp.on("dragstart", () => grp.moveToBottom());
-  grp.on("dragend", () => cbs.onDragEnd(cont.id, grp.x(), grp.y()));
+
+  // Make container go behind children
+  grp.on("dragstart", () => {
+    grp.moveToBottom();
+    grp.getStage().container().style.cursor = "grabbing";
+  });
+  grp.on("dragend", () => {
+    cbs.onDragEnd(cont.id, grp.x(), grp.y());
+    grp.getStage().container().style.cursor = "default";
+  });
+
   return grp;
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
-export default function KeplerBuilderLatest() {
+export default function FormBuilderFreeCanvasCopy() {
   const wrapRef = useRef(null);
   const konvaMap = useRef({});
   const contsRef = useRef([]);
   const freeRef = useRef([]);
   const isDragging = useRef(false);
+  // Resize state
+  const resizeState = useRef(null); // { contId, startX, startY, startW, startH }
 
   const [freeEls, setFreeEls] = useState([]);
   const [conts, setConts] = useState([]);
   const [popup, setPopup] = useState(null);
-  const [mode, setMode] = useState("edit"); // "edit" | "preview"
+  const [mode, setMode] = useState("edit");
 
   useEffect(() => {
     contsRef.current = conts;
@@ -1010,10 +1177,9 @@ export default function KeplerBuilderLatest() {
     freeRef.current = freeEls;
   }, [freeEls]);
 
-  // Flatten all elements for preview (free first, then container children)
-  const allElements = [...freeEls, ...conts.flatMap((c) => c.children)];
+  const totalElements =
+    freeEls.length + conts.flatMap((c) => c.children).length;
 
-  // ── Get element by id ────────────────────────────────────────────────────
   const getElementById = (id) => {
     const free = freeRef.current.find((e) => e.id === id);
     if (free) return { el: free, isFree: true, containerId: null };
@@ -1024,7 +1190,6 @@ export default function KeplerBuilderLatest() {
     return null;
   };
 
-  // ── Update element props ─────────────────────────────────────────────────
   const updateProps = (id, newProps) => {
     const found = getElementById(id);
     if (!found) return;
@@ -1062,7 +1227,7 @@ export default function KeplerBuilderLatest() {
     if (!isDragging.current) setPopup({ id, pos });
   };
 
-  // ── Init Konva ───────────────────────────────────────────────────────────
+  // ── Init Konva ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!wrapRef.current) return;
     const stage = new Konva.Stage({
@@ -1074,21 +1239,43 @@ export default function KeplerBuilderLatest() {
     stage.add(layer);
     wrapRef.current._stage = stage;
     wrapRef.current._layer = layer;
+
+    // Resize handle interaction via stage mousemove/up
+    stage.on("mousemove", (e) => {
+      if (!resizeState.current) return;
+      const { contId, startX, startY, startW, startH } = resizeState.current;
+      const pos = stage.getPointerPosition();
+      const dx = pos.x - startX;
+      const dy = pos.y - startY;
+      const newW = Math.max(CONT_MIN_W, startW + dx);
+      const newH = Math.max(CONT_MIN_H, startH + dy);
+      setConts((p) =>
+        p.map((c) => (c.id === contId ? { ...c, w: newW, h: newH } : c)),
+      );
+    });
+
+    stage.on("mouseup touchend", () => {
+      resizeState.current = null;
+      wrapRef.current._stage.container().style.cursor = "default";
+    });
     stage.on("click tap", (e) => {
       if (e.target === stage) setPopup(null);
     });
+
     return () => stage.destroy();
   }, []);
 
-  // ── Sync state → Konva ──────────────────────────────────────────────────
+  // ── Sync state → Konva ─────────────────────────────────────────────────────
   useEffect(() => {
     const layer = wrapRef.current?._layer;
     if (!layer) return;
+    const stage = wrapRef.current._stage;
     const alive = new Set();
 
     conts.forEach((cont) => {
       const key = "cont_" + cont.id;
       alive.add(key);
+
       if (!konvaMap.current[key]) {
         const node = buildContainer(cont, {
           onDragEnd: (id, nx, ny) =>
@@ -1103,21 +1290,63 @@ export default function KeplerBuilderLatest() {
         layer.add(node);
         node.moveToBottom();
         konvaMap.current[key] = node;
-      } else {
-        const node = konvaMap.current[key];
-        if (!node.isDragging()) node.position({ x: cont.x, y: cont.y });
-        node
-          .findOne(".bg")
-          .setAttrs({ height: contHeight(cont.children.length) });
-        node.findOne(".hint").visible(cont.children.length === 0);
-      }
-      const contNode = konvaMap.current[key];
 
-      cont.children.forEach((child, idx) => {
+        // Attach resize mousedown on the resize handle
+        const rh = node.findOne(".resize");
+        rh.on("mousedown touchstart", (e) => {
+          e.cancelBubble = true;
+          node.draggable(false); // disable container drag while resizing
+          const pos = stage.getPointerPosition();
+          const c = contsRef.current.find((c) => c.id === cont.id);
+          resizeState.current = {
+            contId: cont.id,
+            startX: pos.x,
+            startY: pos.y,
+            startW: c.w,
+            startH: c.h,
+          };
+          stage.container().style.cursor = "se-resize";
+        });
+        rh.on("mouseenter", () => {
+          stage.container().style.cursor = "se-resize";
+        });
+        rh.on("mouseleave", () => {
+          if (!resizeState.current) stage.container().style.cursor = "default";
+        });
+
+        stage.on("mouseup touchend", () => {
+          node.draggable(true);
+        });
+      }
+
+      // Sync position and size
+      const node = konvaMap.current[key];
+      if (!node.isDragging()) node.position({ x: cont.x, y: cont.y });
+
+      const bg = node.findOne(".bg");
+      bg.setAttrs({ width: cont.w, height: cont.h });
+
+      // Update delete button and resize handle positions
+      const del = node.findOne(".del");
+      if (del) del.position({ x: cont.w - 22, y: 8 });
+
+      const rh = node.findOne(".resize");
+      if (rh) rh.position({ x: cont.w - RESIZE_HIT, y: cont.h - RESIZE_HIT });
+
+      // Hint text centered
+      const hint = node.findOne(".hint");
+      if (hint) {
+        hint.visible(cont.children.length === 0);
+        hint.position({ x: cont.w / 2 - 100, y: cont.h / 2 - 6 });
+      }
+
+      // Sync children
+      cont.children.forEach((child) => {
         const cKey = "child_" + child.id;
         alive.add(cKey);
+
         if (!konvaMap.current[cKey]) {
-          const node = buildChild(child, idx, cont, {
+          const cNode = buildChild(child, {
             onClick: (id, pos) => openPopup(id, pos),
             onDelete: (cid) => {
               setConts((p) =>
@@ -1132,58 +1361,35 @@ export default function KeplerBuilderLatest() {
               );
               setPopup(null);
             },
-            onMoveUp: (cid) =>
-              setConts((p) =>
-                p.map((c) => {
-                  if (c.id !== cont.id) return c;
-                  const k = [...c.children];
-                  const i = k.findIndex((x) => x.id === cid);
-                  if (i <= 0) return c;
-                  [k[i - 1], k[i]] = [k[i], k[i - 1]];
-                  return { ...c, children: k };
-                }),
-              ),
-            onMoveDown: (cid) =>
-              setConts((p) =>
-                p.map((c) => {
-                  if (c.id !== cont.id) return c;
-                  const k = [...c.children];
-                  const i = k.findIndex((x) => x.id === cid);
-                  if (i < 0 || i >= k.length - 1) return c;
-                  [k[i], k[i + 1]] = [k[i + 1], k[i]];
-                  return { ...c, children: k };
-                }),
-              ),
-            onDragReorder: (from, to) => {
-              if (from === to) return;
-              setConts((p) =>
-                p.map((c) => {
-                  if (c.id !== cont.id) return c;
-                  const k = [...c.children];
-                  const [m] = k.splice(from, 1);
-                  k.splice(to, 0, m);
-                  return { ...c, children: k };
-                }),
-              );
-            },
             onDragStart: () => {
               isDragging.current = true;
               setPopup(null);
             },
-            getContChildren: () =>
-              contsRef.current.find((c) => c.id === cont.id)?.children ?? [],
-            getCurrentIdx: (cid) => {
-              const l = contsRef.current.find((c) => c.id === cont.id);
-              return l ? l.children.findIndex((k) => k.id === cid) : idx;
+            onDragEnd: (cid, nx, ny) => {
+              isDragging.current = false;
+              setConts((p) =>
+                p.map((c) =>
+                  c.id !== cont.id
+                    ? c
+                    : {
+                        ...c,
+                        children: c.children.map((ch) =>
+                          ch.id !== cid ? ch : { ...ch, cx: nx, cy: ny },
+                        ),
+                      },
+                ),
+              );
             },
+            getCont: () =>
+              contsRef.current.find((c) => c.id === cont.id) || cont,
           });
-          contNode.add(node);
-          konvaMap.current[cKey] = node;
+          node.add(cNode);
+          konvaMap.current[cKey] = cNode;
         } else {
-          const node = konvaMap.current[cKey];
-          if (!node.isDragging()) {
-            node.position({ x: CONT_PAD, y: childRelY(idx) });
-            setCardTexts(node, child);
+          const cNode = konvaMap.current[cKey];
+          if (!cNode.isDragging()) {
+            cNode.position({ x: child.cx, y: child.cy });
+            setCardTexts(cNode, child);
           }
         }
       });
@@ -1210,6 +1416,12 @@ export default function KeplerBuilderLatest() {
               konvaMap.current["el_" + el.id]?.destroy();
               delete konvaMap.current["el_" + el.id];
               setFreeEls((p) => p.filter((e) => e.id !== el.id));
+              // Place at relative position within container
+              const cx = Math.max(4, Math.min(hit.w - CHILD_W - 4, nx - hit.x));
+              const cy = Math.max(
+                CONT_HDR_H + 4,
+                Math.min(hit.h - EL_H - 4, ny - hit.y),
+              );
               setConts((p) =>
                 p.map((c) =>
                   c.id !== hit.id
@@ -1223,6 +1435,8 @@ export default function KeplerBuilderLatest() {
                             type: el.type,
                             label: el.label,
                             props: el.props,
+                            cx,
+                            cy,
                           },
                         ],
                       },
@@ -1246,6 +1460,7 @@ export default function KeplerBuilderLatest() {
       }
     });
 
+    // Destroy dead nodes
     Object.keys(konvaMap.current).forEach((key) => {
       if (!alive.has(key)) {
         konvaMap.current[key].destroy();
@@ -1264,7 +1479,7 @@ export default function KeplerBuilderLatest() {
     return () => window.removeEventListener("mouseup", up);
   }, []);
 
-  // ── Drop from sidebar ────────────────────────────────────────────────────
+  // ── Drop from sidebar ──────────────────────────────────────────────────────
   const handleDrop = (e) => {
     e.preventDefault();
     const raw = e.dataTransfer.getData("componentType");
@@ -1274,25 +1489,39 @@ export default function KeplerBuilderLatest() {
     const x = e.clientX - rect.left,
       y = e.clientY - rect.top;
     setPopup(null);
+
     if (type === "container") {
+      const w = 320,
+        h = 200;
       setConts((p) => [
         ...p,
-        { id: uid(), x: x - CONT_W / 2, y: y - CONT_HDR_H / 2, children: [] },
+        { id: uid(), x: x - w / 2, y: y - CONT_HDR_H / 2, w, h, children: [] },
       ]);
     } else {
       const newEl = { id: uid(), type, label, props: defaultProps(type) };
       const hit = hitCont(contsRef.current, x, y);
-      if (hit)
+      if (hit) {
+        const cx = Math.max(
+          4,
+          Math.min(hit.w - CHILD_W - 4, x - hit.x - CHILD_W / 2),
+        );
+        const cy = Math.max(
+          CONT_HDR_H + 4,
+          Math.min(hit.h - EL_H - 4, y - hit.y - EL_H / 2),
+        );
         setConts((p) =>
           p.map((c) =>
-            c.id !== hit.id ? c : { ...c, children: [...c.children, newEl] },
+            c.id !== hit.id
+              ? c
+              : { ...c, children: [...c.children, { ...newEl, cx, cy }] },
           ),
         );
-      else
+      } else {
         setFreeEls((p) => [
           ...p,
           { ...newEl, x: x - EL_W / 2, y: y - EL_H / 2 },
         ]);
+      }
     }
   };
 
@@ -1320,7 +1549,7 @@ export default function KeplerBuilderLatest() {
         fontFamily: "system-ui,sans-serif",
       }}
     >
-      {/* ── Top bar ── */}
+      {/* Top bar */}
       <div
         style={{
           height: 52,
@@ -1342,8 +1571,6 @@ export default function KeplerBuilderLatest() {
         >
           Form Builder
         </div>
-
-        {/* Mode toggle */}
         <div
           style={{
             display: "flex",
@@ -1376,92 +1603,91 @@ export default function KeplerBuilderLatest() {
             </button>
           ))}
         </div>
-
         <div style={{ color: "#475569", fontSize: 11 }}>
-          {freeEls.length + conts.flatMap((c) => c.children).length} element(s)
+          {totalElements} element(s)
         </div>
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* ── Sidebar (edit mode only) ── */}
-        {!isPreview && (
+        {/* Sidebar */}
+        <div
+          style={{
+            width: SIDEBAR_W,
+            background: "#1e293b",
+            padding: "16px 12px",
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
           <div
             style={{
-              width: SIDEBAR_W,
-              background: "#1e293b",
-              padding: "16px 12px",
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
+              color: "#64748b",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 1.5,
+              textTransform: "uppercase",
+              marginBottom: 4,
             }}
           >
-            <div
-              style={{
-                color: "#64748b",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                marginBottom: 4,
-              }}
-            >
-              Components
-            </div>
-            {SIDEBAR_ITEMS.map((item) => (
-              <div
-                key={item.type}
-                draggable
-                onDragStart={(e) =>
-                  e.dataTransfer.setData(
-                    "componentType",
-                    JSON.stringify({ type: item.type, label: item.label }),
-                  )
-                }
-                style={{
-                  padding: "9px 12px",
-                  background: item.type === "container" ? "#172554" : "#334155",
-                  border:
-                    item.type === "container"
-                      ? "1px dashed #3b5bdb"
-                      : "1px solid #475569",
-                  borderRadius: 6,
-                  cursor: "grab",
-                  fontSize: 13,
-                  color: "#e2e8f0",
-                  userSelect: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span>
-                  {item.type === "container" ? "📦" : ICONS[item.label]}
-                </span>
-                {item.label}
-              </div>
-            ))}
-            <div
-              style={{
-                marginTop: "auto",
-                color: "#475569",
-                fontSize: 10,
-                lineHeight: 2,
-              }}
-            >
-              • Drag to canvas
-              <br />
-              • Drop on container to group
-              <br />
-              • ↑↓ or drag to reorder
-              <br />
-              • Click → edit properties
-              <br />• Hover → ✕ to delete
-            </div>
+            Components
           </div>
-        )}
+          {SIDEBAR_ITEMS.map((item) => (
+            <div
+              key={item.type}
+              draggable
+              onDragStart={(e) =>
+                e.dataTransfer.setData(
+                  "componentType",
+                  JSON.stringify({ type: item.type, label: item.label }),
+                )
+              }
+              style={{
+                padding: "9px 12px",
+                background: item.type === "container" ? "#172554" : "#334155",
+                border:
+                  item.type === "container"
+                    ? "1px dashed #3b5bdb"
+                    : "1px solid #475569",
+                borderRadius: 6,
+                cursor: "grab",
+                fontSize: 13,
+                color: "#e2e8f0",
+                userSelect: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span>
+                {item.type === "container" ? "📦" : ICONS[item.label]}
+              </span>
+              {item.label}
+            </div>
+          ))}
+          <div
+            style={{
+              marginTop: "auto",
+              color: "#475569",
+              fontSize: 10,
+              lineHeight: 2,
+            }}
+          >
+            • Drag to canvas
+            <br />
+            • Drop on container to group
+            <br />
+            • Drag freely inside container
+            <br />
+            • Resize container (↘ corner)
+            <br />
+            • Click → edit properties
+            <br />• Hover → ✕ to delete
+          </div>
+        </div>
 
-        {/* ── Canvas ── */}
+        {/* Canvas */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
           <div
             ref={wrapRef}
@@ -1476,8 +1702,6 @@ export default function KeplerBuilderLatest() {
               pointerEvents: isPreview ? "none" : "auto",
             }}
           />
-
-          {/* Edit popup */}
           {!isPreview && popup && popupEl && (
             <Popup
               el={popupEl}
@@ -1487,9 +1711,7 @@ export default function KeplerBuilderLatest() {
               onClose={() => setPopup(null)}
             />
           )}
-
-          {/* Preview mode overlay hint */}
-          {isPreview && allElements.length === 0 && (
+          {isPreview && totalElements === 0 && (
             <div
               style={{
                 position: "absolute",
@@ -1506,11 +1728,10 @@ export default function KeplerBuilderLatest() {
           )}
         </div>
       </div>
-
-      {/* ── Preview form modal ── */}
-      {isPreview && allElements.length > 0 && (
+      {isPreview && totalElements > 0 && (
         <PreviewForm
-          allElements={allElements}
+          freeElements={freeEls}
+          containers={conts}
           onClose={() => setMode("edit")}
         />
       )}
