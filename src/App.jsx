@@ -1,14 +1,12 @@
 import React from "react";
-import KonvaFormBuilder from "./components/KonvaFormBuilder.jsx";
-import KonvaFormBuilderNew from "./components/KonvaFormBuilderNew.jsx";
-import KonvaFormBuilderLatest from "./components/KonvaFormBuilderLatest.jsx";
 import KonvaFormBuilderLatest1 from "./components/KonvaFormBuilderLatest1.jsx";
-import KonvaFormBuilderLatest2 from "./components/KonvaFormBuilderLatest2.jsx";
+import FormBuilderFreeCanvas from "./components/FormBuilder.jsx";
 const App = () => {
   return (
     <div>
       {/* <KonvaFormBuilder /> */}
-      <KonvaFormBuilderLatest1 />
+      {/* <KonvaFormBuilderLatest1 /> */}
+      <FormBuilderFreeCanvas />
     </div>
   );
 };
